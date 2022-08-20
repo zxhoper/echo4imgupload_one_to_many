@@ -22,29 +22,38 @@ func upload(c echo.Context) error {
 	//-----------
 
 	// Source
-	file, err := c.FormFile("file")
+	// -Single file, err := c.FormFile("file")
+	form, err := c.MultipartForm()
 	if err != nil {
 		return err
 	}
-	src, err := file.Open()
-	if err != nil {
-		return err
-	}
-	defer src.Close()
+	files := form.File["files"]
 
-	// Destination
-	dst, err := os.Create("up/" + file.Filename)
-	if err != nil {
-		return err
-	}
-	defer dst.Close()
+	for _, file := range files {
+		// FF -- For-Single-file ------------------------ ___--\\
+		src, err := file.Open()
+		if err != nil {
+			return err
+		}
+		defer src.Close()
 
-	// Copy
-	if _, err = io.Copy(dst, src); err != nil {
-		return err
+		// Destination
+		dstFolder := "up/"
+		dst, err := os.Create(dstFolder + file.Filename)
+		if err != nil {
+			return err
+		}
+		defer dst.Close()
+
+		// Copy
+		if _, err = io.Copy(dst, src); err != nil {
+			return err
+		}
+		// LL __ For-Single-file ________________________ ___--//
 	}
 
-	return c.HTML(http.StatusOK, fmt.Sprintf("<p>File %s uploaded successfully with fields name=%s and email=%s.</p>", file.Filename, name, email))
+	return c.HTML(http.StatusOK, fmt.Sprintf("<p>Uploaded successfully %d files with fields name=%s and email=%s.</p>", len(files), name, email))
+
 }
 
 func main() {
